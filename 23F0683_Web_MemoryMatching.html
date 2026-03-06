@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Memory Matching Game</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .card {
+            width: 80px;
+            height: 80px;
+            margin: 5px;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 8px;
+            user-select: none;
+            transition: background-color 0.3s ease;
+        }
+        
+        .card.flipped {
+            background-color: #fff;
+            color: #333;
+        }
+
+        #gameBoard {
+            width: 400px;
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        #winMessage {
+            display: none;
+            color: green;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+
+
+<body>
+
+    <div id="gameHeader" style="text-align: center;">
+        <h2>Memory Matching Game</h2>
+        <p>Moves: <span id="moves">0</span></p>
+        <p>Time: <span id="timer">0</span> seconds</p>
+    </div>
+    
+    <div id="gameBoard"></div>
+    
+    <div id="winMessage">
+        <h2>You Win!</h2>
+    </div>
+    
+    <audio id="matchSound" src="match.mp3"></audio>
+    <audio id="wrongSound" src="wrong.mp3"></audio>
+
+    <script>
+        $(document).ready(function() {
+            const symbols = ['🚀', '🚀', '🛸', '🛸', '🌍', '🌍', '🌙', '🌙', '⭐', '⭐', '💻', '💻', '🔋', '🔋', '💡', '💡'];            
+            symbols.sort(() => 0.5 - Math.random());
+
+            let firstCard = null;
+            let secondCard = null;
+            let lockBoard = false;
+            let moves = 0;
+            let matches = 0;
+            let timer = 0;
+            let timerInterval;
+            let timerStarted = false;
+
+            symbols.forEach(function(symbol) {
+                $('#gameBoard').append(`<div class="card" data-symbol="${symbol}"></div>`);
+            });
+
+            $('.card').on('click', function() {
+                if (!timerStarted) {
+                    timerStarted = true;
+                    timerInterval = setInterval(function() {
+                        timer++;
+                        $('#timer').text(timer);
+                    }, 1000);
+                }
+
+                if (lockBoard || $(this).hasClass('flipped')) return;
+
+                $(this).addClass('flipped').text($(this).data('symbol')).hide().fadeIn(150);
+
+                if (!firstCard) {
+                    firstCard = $(this);
+                    return;
+                }
+
+                secondCard = $(this);
+                moves++;
+                $('#moves').text(moves);
+                lockBoard = true; 
+
+                if (firstCard.data('symbol') === secondCard.data('symbol')) {
+                    document.getElementById('matchSound').play().catch(()=>{}); 
+                    firstCard = null;
+                    secondCard = null;
+                    lockBoard = false;
+                    matches++;
+
+                    if (matches === 8) {
+                        clearInterval(timerInterval); 
+                        $('#winMessage').slideDown();
+                    }
+                } else {
+                    document.getElementById('wrongSound').play().catch(()=>{}); // Ignore error if no sound file
+                    
+                    setTimeout(function() {
+                        firstCard.removeClass('flipped').text('');
+                        secondCard.removeClass('flipped').text('');
+                        firstCard = null;
+                        secondCard = null;
+                        lockBoard = false;
+                    }, 1000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
